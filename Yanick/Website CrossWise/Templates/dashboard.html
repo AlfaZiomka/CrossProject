@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SPOT GRONINGEN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('/static/spot.png') no-repeat center top fixed;
+            background-size: contain;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: rgba(51, 51, 51, 0.9);
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between; /* Zorg ervoor dat de inhoud wordt verdeeld */
+        }
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            width: 100%;
+            flex-grow: 1; /* Zorg ervoor dat de lijst groeit om de ruimte op te vullen */
+        }
+        .sidebar ul li {
+            padding: 10px;
+            text-align: center;
+        }
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+        }
+        .sidebar ul li a:hover {
+            background-color: #575757;
+        }
+        .logout {
+            margin-top: auto; /* Zorg ervoor dat de uitlogknop naar de onderkant van de zijbalk wordt geduwd */
+        }
+        .logout a {
+            color: white; /* Geef de uitlogknop een witte kleur */
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            text-align: center;
+            width: 100%;
+        }
+        .logout a:hover {
+            background-color: #575757;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            margin: 20px;
+            margin-top: 400px; /* Vergroot de marge om de main-content verder naar beneden te verplaatsen */
+            overflow-y: auto;
+        }
+        .navbar {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .content {
+            margin-top: 20px;
+        }
+        .alert {
+            background-color: #ffcc00;
+            color: black;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none; /* Verberg de alert standaard */
+        }
+        .bar-status {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .bar {
+            background-color: rgba(0, 123, 255, 0.1);
+            border: 1px solid #007BFF;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+        }
+        .bar h3 {
+            margin-bottom: 10px;
+        }
+        .bar p {
+            margin: 5px 0;
+        }
+        .bar.green {
+            background-color: rgba(0, 255, 0, 0.1);
+            border-color: #00FF00;
+        }
+        .bar.orange {
+            background-color: rgba(255, 165, 0, 0.1);
+            border-color: #FFA500;
+        }
+        .bar.red {
+            background-color: rgba(255, 0, 0, 0.1);
+            border-color: #FF0000;
+        }
+        @media (min-width: 768px) {
+            .bar-status {
+                flex-direction: row;
+                justify-content: space-around;
+            }
+            .bar {
+                width: 30%;
+            }
+        }
+        .watermark {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 50px;
+            opacity: 0.5;
+        }
+        .media-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 20px;
+        }
+        .video-container {
+            width: 480px; /* Verlaag de breedte van de video */
+            height: 320px; /* Verlaag de hoogte van de video */
+            border: 2px solid #007BFF;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            cursor: pointer; /* Voeg een cursor toe om aan te geven dat de video klikbaar is */
+            pointer-events: none; /* Voorkom dat de video interactie-elementen toont */
+        }
+        .image-container {
+            width: 480px; /* Zelfde breedte als de video */
+            height: 320px; /* Zelfde hoogte als de video */
+            border: 2px solid #007BFF;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .image-container img {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>SPOT GRONINGEN</h2>
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Profiel</a></li>
+            <li><a href="#">Instellingen</a></li>
+            <li><a href="/kiosk">Zelfbestellingskiosk</a></li> <!-- Link naar de kiosk -->
+        </ul>
+        <div class="logout">
+            <a href="#">Uitloggen</a>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="navbar">
+            <h1>Welkom op het Dashboard</h1>
+        </div>
+        <div class="content">
+            <div class="alert" id="alert">
+                Waarschuwing: Te veel klanten bij de bar!
+            </div>
+            <div class="bar-status">
+                <div class="bar" id="bar-1">
+                    <h3>Bar 1</h3>
+                    <p id="bar-1-status">Normaal</p>
+                </div>
+                <div class="bar" id="bar-2">
+                    <h3>Bar 2</h3>
+                    <p id="bar-2-status">Normaal</p>
+                </div>
+                <div class="bar" id="bar-3">
+                    <h3>Bar 3</h3>
+                    <p id="bar-3-status">Normaal</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="media-container">
+        <div class="video-container">
+            <video id="heatmap-video" src="/static/heatmap.mp4" autoplay loop muted playsinline></video>
+        </div>
+        <div class="image-container">
+            <img src="/static/heatmap.png" alt="Plattegrond van het gebouw">
+        </div>
+    </div>
+    <img src="/static/alfa-college.png" alt="Watermerk" class="watermark">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const cooldownPeriod = 30000; // Cooldown periode van 30 seconden
+        const lastDrukTime = { 'bar-1': 0, 'bar-2': 0, 'bar-3': 0 };
+
+        function updateBarStatus(barId, status) {
+            const bar = document.getElementById(barId);
+            const statusSpan = document.getElementById(`${barId}-status`);
+
+            statusSpan.textContent = status;
+
+            if (status === 'Druk') {
+                bar.className = 'bar red';
+                document.getElementById('alert').style.display = 'block';
+                socket.emit('send_alert', { message: `Te veel klanten bij ${barId.replace('-', ' ')}` });
+            } else if (status === 'Het wordt druk') {
+                bar.className = 'bar orange';
+            } else {
+                bar.className = 'bar green';
+            }
+        }
+
+        function simulateBarStatus() {
+            const currentTime = Date.now();
+
+            ['bar-1', 'bar-2', 'bar-3'].forEach(barId => {
+                let status;
+                if (currentTime - lastDrukTime[barId] < cooldownPeriod) {
+                    status = randomStatus(['Het wordt druk', 'Rustig'], [3, 7]);
+                } else {
+                    status = randomStatus(['Druk', 'Het wordt druk', 'Rustig'], [1, 3, 7]);
+                    if (status === 'Druk') {
+                        lastDrukTime[barId] = currentTime;
+                    }
+                }
+                updateBarStatus(barId, status);
+            });
+        }
+
+        function randomStatus(statuses, weights) {
+            const totalWeight = weights.reduce((acc, weight) => acc + weight, 0);
+            const randomNum = Math.random() * totalWeight;
+            let weightSum = 0;
+
+            for (let i = 0; i < statuses.length; i++) {
+                weightSum += weights[i];
+                if (randomNum <= weightSum) {
+                    return statuses[i];
+                }
+            }
+        }
+
+        setInterval(simulateBarStatus, 5000); // Simuleer elke 5 seconden
+
+        // Voeg een event listener toe om de video in volledig scherm te bekijken bij dubbelklikken
+        const video = document.getElementById('heatmap-video');
+        video.addEventListener('dblclick', () => {
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            } else if (video.mozRequestFullScreen) { // Firefox
+                video.mozRequestFullScreen();
+            } else if (video.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                video.webkitRequestFullscreen();
+            } else if (video.msRequestFullscreen) { // IE/Edge
+                video.msRequestFullscreen();
+            }
+        });
+    </script>
+</body>
+</html>
