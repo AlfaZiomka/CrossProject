@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meldingen - SPOT GRONINGEN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('/static/spot.png') no-repeat center top fixed;
+            background-size: contain;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+        }
+        .melding-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+        .melding-container h1 {
+            margin-bottom: 10px;
+            font-size: 24px;
+            color: #333;
+        }
+        .melding-container p {
+            margin-bottom: 20px;
+            color: #666;
+        }
+        .melding-container .alert {
+            background-color: #ffcc00;
+            color: black;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .watermark {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 50px;
+            opacity: 0.5;
+        }
+        .bar-alerts {
+            margin-top: 20px;
+        }
+        .bar-alerts h2 {
+            margin-bottom: 10px;
+            font-size: 20px;
+            color: #333;
+        }
+        .bar-alerts .alert {
+            background-color: #ffcc00;
+            color: black;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="melding-container">
+        <h1>Meldingen</h1>
+        <div class="bar-alerts" id="bar-1-alerts">
+            <h2>Bar 1</h2>
+        </div>
+        <div class="bar-alerts" id="bar-2-alerts">
+            <h2>Bar 2</h2>
+        </div>
+        <div class="bar-alerts" id="bar-3-alerts">
+            <h2>Bar 3</h2>
+        </div>
+    </div>
+    <img src="/static/alfa-college.png" alt="Watermerk" class="watermark">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const maxAlerts = 5; // Maximaal aantal meldingen per bar
+
+        // Debugging: Log wanneer de verbinding is gemaakt
+        socket.on('connect', function() {
+            console.log('Verbonden met de server');
+        });
+
+        // Debugging: Log eventuele fouten
+        socket.on('error', function(error) {
+            console.error('Socket.IO-fout:', error);
+        });
+
+        // Ontvang meldingen van de server
+        socket.on('receive_alert', function(data) {
+            console.log('Received alert:', data);  // Debugging log
+            const barNumber = data.message.split(' ')[5];
+            const alertsDiv = document.getElementById(`bar-${barNumber}-alerts`);
+            const alert = document.createElement('div');
+            alert.className = 'alert';
+            alert.innerText = data.message;
+
+            // Voeg de nieuwe melding toe
+            alertsDiv.appendChild(alert);
+
+            // Verwijder de oudste melding als het maximum is bereikt
+            if (alertsDiv.children.length > maxAlerts) {
+                alertsDiv.removeChild(alertsDiv.firstChild);
+            }
+        });
+    </script>
+</body>
+</html>
