@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zelfbestellingskiosk - SPOT GRONINGEN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .kiosk-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+        .kiosk-container h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .tabs button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px; /* Maak de knoppen iets kleiner */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px; /* Verlaag de lettergrootte */
+            margin: 0 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Voeg schaduw toe */
+            transition: background-color 0.3s, transform 0.3s; /* Voeg overgangseffecten toe */
+        }
+        .tabs button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px); /* Voeg een lichte verplaatsing toe bij hover */
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .order-list {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .order-list h2 {
+            font-size: 20px;
+            color: #333;
+        }
+        .order-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .order-list ul li {
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-list ul li:last-child {
+            border-bottom: none;
+        }
+        .order-list button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px; /* Maak de knoppen iets kleiner */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px; /* Verlaag de lettergrootte */
+            margin-top: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Voeg schaduw toe */
+            transition: background-color 0.3s, transform 0.3s; /* Voeg overgangseffecten toe */
+        }
+        .order-list button:hover {
+            background-color: #218838;
+            transform: translateY(-2px); /* Voeg een lichte verplaatsing toe bij hover */
+        }
+        .remove-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 14px;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .remove-button:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+        .modal {
+            display: none; /* Verborgen standaard */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4); /* Zwarte achtergrond met transparantie */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% van boven en gecentreerd */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Kan worden aangepast */
+            max-width: 400px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .modal-content h2 {
+            margin-top: 0;
+        }
+        .modal-content button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Voeg schaduw toe */
+            transition: background-color 0.3s, transform 0.3s; /* Voeg overgangseffecten toe */
+        }
+        .modal-content button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px); /* Voeg een lichte verplaatsing toe bij hover */
+        }
+        .tab-content button {
+            background-color: #FF5733; /* Verander de kleur van de bestelknoppen */
+            color: white;
+            padding: 10px 20px; /* Maak de knoppen iets kleiner */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px; /* Verlaag de lettergrootte */
+            margin: 10px 5px; /* Voeg marge toe tussen knoppen */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Voeg schaduw toe */
+            transition: background-color 0.3s, transform 0.3s; /* Voeg overgangseffecten toe */
+        }
+        .tab-content button:hover {
+            background-color: #C70039; /* Verander de hover-kleur van de bestelknoppen */
+            transform: translateY(-2px); /* Voeg een lichte verplaatsing toe bij hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="kiosk-container">
+        <h1>Zelfbestellingskiosk</h1>
+        <div class="tabs">
+            <button onclick="showTab('drinks')">Drinken</button>
+            <button onclick="showTab('food')">Eten</button>
+            <button onclick="showTab('alcohol')">Alcohol</button>
+        </div>
+        <div id="drinks" class="tab-content">
+            <button onclick="addItem('Koffie')">Bestel Koffie</button>
+            <button onclick="addItem('Thee')">Bestel Thee</button>
+            <button onclick="addItem('Cola')">Bestel Cola</button>
+        </div>
+        <div id="food" class="tab-content">
+            <button onclick="addItem('Broodje Kaas')">Bestel Broodje Kaas</button>
+            <button onclick="addItem('Salade')">Bestel Salade</button>
+        </div>
+        <div id="alcohol" class="tab-content">
+            <button onclick="addItem('Bier')">Bestel Bier</button>
+            <button onclick="addItem('Wijn')">Bestel Wijn</button>
+        </div>
+        <div class="order-list">
+            <h2>Uw Bestelling</h2>
+            <ul id="order-list"></ul>
+            <button onclick="submitOrder()">Bestelling Indienen</button>
+        </div>
+    </div>
+
+    <!-- Modal voor ID-verificatie -->
+    <div id="idModal" class="modal">
+        <div class="modal-content">
+            <h2>ID Verificatie</h2>
+            <p>Heeft u uw ID bij u voor alcoholische dranken?</p>
+            <button onclick="confirmID(true)">Ja</button>
+            <button onclick="confirmID(false)">Nee</button>
+        </div>
+    </div>
+
+    <!-- Modal voor algemene meldingen -->
+    <div id="alertModal" class="modal">
+        <div class="modal-content">
+            <h2>Melding</h2>
+            <p id="alertMessage"></p>
+            <button onclick="closeAlert()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const orderList = document.getElementById('order-list');
+        const orderItems = [];
+
+        function addItem(item) {
+            orderItems.push(item);
+            updateOrderList();
+        }
+
+        function removeItem(index) {
+            orderItems.splice(index, 1);
+            updateOrderList();
+        }
+
+        function updateOrderList() {
+            orderList.innerHTML = '';
+            orderItems.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Verwijderen';
+                removeButton.className = 'remove-button';
+                removeButton.onclick = () => removeItem(index);
+                li.appendChild(removeButton);
+                orderList.appendChild(li);
+            });
+        }
+
+        function submitOrder() {
+            if (orderItems.length === 0) {
+                showAlert('Uw bestelling is leeg.');
+                return;
+            }
+
+            const kassas = ['1', '2', '3'];
+            const randomKassa = kassas[Math.floor(Math.random() * kassas.length)];
+            let message = `Uw bestelling is ingediend. Ga naar kassa ${randomKassa} om te betalen.`;
+
+            const alcoholItems = ['Bier', 'Wijn'];
+            const hasAlcohol = orderItems.some(item => alcoholItems.includes(item));
+
+            if (hasAlcohol) {
+                document.getElementById('idModal').style.display = 'block';
+            } else {
+                showAlert(message);
+                orderItems.length = 0;
+                updateOrderList();
+            }
+        }
+
+        function confirmID(hasID) {
+            document.getElementById('idModal').style.display = 'none';
+            if (hasID) {
+                const kassas = ['1', '2', '3'];
+                const randomKassa = kassas[Math.floor(Math.random() * kassas.length)];
+                let message = `Uw bestelling is ingediend. Ga naar kassa ${randomKassa} om te betalen. Vergeet niet uw ID mee te nemen voor alcoholische dranken.`;
+                showAlert(message);
+                orderItems.length = 0;
+                updateOrderList();
+            } else {
+                showAlert('U kunt geen alcoholische dranken bestellen zonder ID.');
+            }
+        }
+
+        function showAlert(message) {
+            document.getElementById('alertMessage').innerText = message;
+            document.getElementById('alertModal').style.display = 'block';
+        }
+
+        function closeAlert() {
+            document.getElementById('alertModal').style.display = 'none';
+        }
+
+        function showTab(tabId) {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Standaard tab weergeven
+        showTab('drinks');
+    </script>
+</body>
+</html>
