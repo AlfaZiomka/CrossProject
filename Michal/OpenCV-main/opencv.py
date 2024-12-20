@@ -8,7 +8,7 @@ import threading
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Initialize the camera
-video_path = "rtsp://joebidensbalzak69:hijisdement420@192.168.0.101:554/stream1"  # Use 0 for the default camera
+video_path = "rtsp://joebidensbalzak69:hijisdement420@192.168.0.101:554/stream1"  # Use 0 for the default camera #use: "rtsp://joebidensbalzak69:hijisdement420@192.168.0.101:554/stream1" voor de ip camera.
 cap = cv2.VideoCapture(video_path)
 if not cap.isOpened():
     print("Error opening camera")
