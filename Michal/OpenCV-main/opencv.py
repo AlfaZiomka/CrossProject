@@ -60,6 +60,7 @@ def capture_frames():
     while True:
         ret, new_frame = cap.read()
         if not ret:
+            print("Failed to capture frame")
             break
         with frame_lock:
             frame = new_frame
@@ -153,20 +154,27 @@ def process_frames():
                 send_message_to_website(people_count)
             previous_people_count = people_count
 
-# Start the frame capture and processing threads
-capture_thread = threading.Thread(target=capture_frames)
-process_thread = threading.Thread(target=process_frames)
-capture_thread.start()
-process_thread.start()
+def generate_frames():
+    global overlay_frame
+    while True:
+        if overlay_frame is not None:
+            ret, buffer = cv2.imencode('.jpg', overlay_frame)
+            frame = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-while True:
-    if overlay_frame is not None:
-        # Show the result without details of moving objects outside the humans
-        cv2.imshow("Heatmap with green rectangles around humans", overlay_frame)
+def run_opencv():
+    # Start the frame capture and processing threads
+    capture_thread = threading.Thread(target=capture_frames)
+    process_thread = threading.Thread(target=process_frames)
+    capture_thread.start()
+    process_thread.start()
 
-    # Use the calculated wait time for real-time playback
-    if cv2.waitKey(wait_time) & 0xFF == ord('q'):
-        break
+    capture_thread.join()
+    process_thread.join()
 
-cap.release()
-cv2.destroyAllWindows()
+    cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    run_opencv()
