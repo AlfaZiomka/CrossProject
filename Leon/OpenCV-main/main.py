@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from db import init_db, get_counts, insert_count
+import threading
+from opencv import run_opencv  # Import the OpenCV function
 
 app = Flask(__name__)
 
@@ -41,4 +43,6 @@ def current_count():
     })
 
 if __name__ == '__main__':
+    # Start the OpenCV function in a separate thread
+    threading.Thread(target=run_opencv).start()
     app.run(debug=True)
