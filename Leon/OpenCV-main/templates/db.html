@@ -78,9 +78,34 @@
             <h1>Database Information</h1>
             <p>Details about the database will be displayed here.</p>
         </div>
+        <div class="content">
+            <div>
+                <h2>Current Counts</h2>
+                <p>Current Count: <span id="current-count">0</span></p>
+                <p>Minimum Count: <span id="min-count">0</span></p>
+                <p>Maximum Count: <span id="max-count">0</span></p>
+                <p>Average Count: <span id="avg-count">0</span></p>
+            </div>
+        </div>
     </div>
     <footer>
         <p>&copy; 2023 My Homepage. All rights reserved.</p>
     </footer>
+    <script>
+        function fetchCurrentCount() {
+            fetch('/current_count')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('current-count').textContent = data.current_count;
+                    document.getElementById('min-count').textContent = data.min_count;
+                    document.getElementById('max-count').textContent = data.max_count;
+                    document.getElementById('avg-count').textContent = data.avg_count;
+                })
+                .catch(error => console.error('Error fetching current count:', error));
+        }
+
+        // Fetch current count immediately on page load
+        fetchCurrentCount();
+    </script>
 </body>
 </html>

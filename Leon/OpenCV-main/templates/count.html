@@ -76,11 +76,33 @@
     <div class="container">
         <div class="hero">
             <h1>Count Information</h1>
-            <p>Details about the count will be displayed here.</p>
+            <p>Current Count: <span id="current-count">0</span></p>
+            <p>Minimum Count: <span id="min-count">0</span></p>
+            <p>Maximum Count: <span id="max-count">0</span></p>
+            <p>Average Count: <span id="avg-count">0</span></p>
         </div>
     </div>
     <footer>
         <p>&copy; 2023 My Homepage. All rights reserved.</p>
     </footer>
+    <script>
+        function fetchCurrentCount() {
+            fetch('/current_count')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('current-count').textContent = data.current_count;
+                    document.getElementById('min-count').textContent = data.min_count;
+                    document.getElementById('max-count').textContent = data.max_count;
+                    document.getElementById('avg-count').textContent = data.avg_count;
+                })
+                .catch(error => console.error('Error fetching current count:', error));
+        }
+
+        // Fetch current count every 5 seconds
+        setInterval(fetchCurrentCount, 2000);
+
+        // Fetch current count immediately on page load
+        fetchCurrentCount();
+    </script>
 </body>
 </html>
