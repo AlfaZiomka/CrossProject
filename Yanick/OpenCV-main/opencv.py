@@ -35,7 +35,7 @@ fps = cap.get(cv2.CAP_PROP_FPS)
 wait_time = int(1000 / fps)  # Calculate the appropriate wait time for real-time playback
 
 # Load the YOLOv8 model for human detection
-model = YOLO('yolov8s.pt').to(device)  # Use yolov8n (nano) for speed; choose yolov8s or larger for more accuracy
+model = YOLO('yolov8n.pt').to(device)  # Use yolov8n (nano) for speed; choose yolov8s or larger for more accuracy
 
 # Background subtractor and optical flow settings
 backSub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, varThreshold=16)  # Lower varThreshold for higher sensitivity
@@ -55,7 +55,7 @@ kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 cumulative_mask = np.zeros_like(frame_small[:, :, 0], dtype=np.uint8)
 
 # Frame interval for processing
-frame_interval = 10  # Process every 2 seconds
+frame_interval = 10  
 frame_count = 0
 
 # List to store counts and timestamps
