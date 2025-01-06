@@ -86,4 +86,4 @@ def simulate_bar_status():
 if __name__ == '__main__':
     threading.Thread(target=simulate_bar_status).start()
     threading.Thread(target=run_opencv).start()  # Start the OpenCV function in a separate thread
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001) 
