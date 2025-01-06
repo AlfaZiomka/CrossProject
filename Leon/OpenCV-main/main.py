@@ -43,6 +43,9 @@ def current_count():
         'avg_count': counts['avg_count']
     })
 
+def start_opencv():
+    run_opencv()
+
 if __name__ == '__main__':
     # Get the local IP address
     hostname = socket.gethostname()
@@ -52,7 +55,8 @@ if __name__ == '__main__':
     print(f"Server running at http://{local_ip}:5000/")
     
     # Start the OpenCV function in a separate thread
-    threading.Thread(target=run_opencv).start()
+    opencv_thread = threading.Thread(target=start_opencv)
+    opencv_thread.start()
     
     # Run the Flask app
     app.run(debug=True, host='0.0.0.0')
