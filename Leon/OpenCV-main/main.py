@@ -56,7 +56,8 @@ if __name__ == '__main__':
     
     # Start the OpenCV function in a separate thread
     opencv_thread = threading.Thread(target=start_opencv)
+    opencv_thread.daemon = True  # Ensure the thread exits when the main program exits
     opencv_thread.start()
     
     # Run the Flask app
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0')
