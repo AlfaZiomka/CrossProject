@@ -2,191 +2,172 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 import torch
-import threading
 import requests
+import time
+import matplotlib.pyplot as plt
+
+# Function to send human count to the Flask endpoint
+def send_human_count_to_db(count):
+    url = 'http://localhost:5000/update_count'  # Adjust the URL to match your Flask endpoint
+    data = {'count': count}
+    try:
+        response = requests.post(url, json=data)
+        if response.status_code == 200:
+            print(f"Successfully sent human count: {count}")
+        else:
+            print(f"Failed to send human count: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending human count: {e}")
 
 # Check if GPU is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# Initialize the camera
-video_path = "rtsp://Groepje6:bingchillin420@192.168.0.101:554/stream1"  # Use 0 for the default camera and for RTSP streams: "rtsp://Groepje6:bingchillin420@192.168.0.101:554/stream1"
+# Initialize the video
+video_path = 'C:/Users/Leonr/Downloads/OpenCV-main/OpenCV-main/bartest.mp4'  # '0' for webcam, 'video.mp4' for a video file, or 'rtsp://...' for an RTSP stream
+
 cap = cv2.VideoCapture(video_path)
 if not cap.isOpened():
-    print(f"Error opening camera with URL: {video_path}")
+    print("Error opening video")
     exit()
 
-# Get the framerate of the camera
+# Get the frame rate of the video
 fps = cap.get(cv2.CAP_PROP_FPS)
-wait_time = int(1000 / fps)  # Calculate the correct wait time for real-time playback
+wait_time = int(1000 / fps)  # Calculate the appropriate wait time for real-time playback
 
-# Load the YOLO11 model for human detection
-model = YOLO('yolo11n.pt').to(device)  # Use yolo11n (nano) for faster performance
+# Load the YOLOv8 model for human detection
+model = YOLO('OpenCV-main/yolov8n.pt').to(device)  # Use yolov8n (nano) for speed; choose yolov8s or larger for more accuracy
 
 # Background subtractor and optical flow settings
-backSub = cv2.createBackgroundSubtractorKNN(detectShadows=False)  # Use KNN for faster background subtraction
+backSub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, varThreshold=16)  # Lower varThreshold for higher sensitivity
 ret, frame = cap.read()
 if not ret:
-    print("Error reading frame from camera")
+    print("Error reading the first frame")
     exit()
 
-original_size = frame.shape[1], frame.shape[0]  # Store the original frame size
-downscale_size = (640, 360)  # Define the downscale size
-prev_gray = cv2.cvtColor(cv2.resize(frame, downscale_size), cv2.COLOR_BGR2GRAY)
+# Downscale the frame for faster processing
+frame_small = cv2.resize(frame, (640, 360))
+prev_gray = cv2.cvtColor(frame_small, cv2.COLOR_BGR2GRAY)
 
 # Structuring element for noise reduction
-kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 
-# Cumulative mask for tracking detected humans
-cumulative_mask = np.zeros_like(prev_gray, dtype=np.uint8)
+# Cumulative mask to track detected people
+cumulative_mask = np.zeros_like(frame_small[:, :, 0], dtype=np.uint8)
 
-# Shared variables for threading
-frame_lock = threading.Lock()
-frame = None
-overlay_frame = None
+# Frame interval for processing
+frame_interval = int(fps * 1)  # Process every 2 seconds
+frame_count = 0
 
-# Threshold for the number of people
-people_threshold = 10
+# List to store counts and timestamps
+counts_and_timestamps = []
 
-# Variable to store the previous count of people
-previous_people_count = 0
+# Function to process frames
+def process_frame(frame, prev_gray, cumulative_mask):
+    global model, backSub, kernel
 
-def send_message_to_website(count):
-    url = "https://yourwebsite.com/api/notify"
-    data = {"message": f"There are {count} people at the bar."}
-    response = requests.post(url, json=data)
-    if response.status_code == 200:
-        print("Message sent successfully")
-    else:
-        print("Failed to send message")
+    # Downscale the frame for faster processing
+    frame_small = cv2.resize(frame, (640, 360))
 
-def capture_frames():
-    global frame
-    while True:
-        ret, new_frame = cap.read()
-        if not ret:
-            print("Failed to capture frame")
-            break
-        with frame_lock:
-            frame = new_frame
+    # Step 1: Background subtractor and mask moving objects
+    fg_mask = backSub.apply(frame_small)
+    _, thresh = cv2.threshold(fg_mask, 150, 255, cv2.THRESH_BINARY)
+    processed_mask = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    processed_mask = cv2.morphologyEx(processed_mask, cv2.MORPH_OPEN, kernel)
 
-def process_frames():
-    global frame, overlay_frame, prev_gray, cumulative_mask, previous_people_count
-    while True:
-        with frame_lock:
-            if frame is None:
-                continue
-            current_frame = frame.copy()
+    # Step 2: Optical flow for accurate movement within the people regions
+    gray = cv2.cvtColor(frame_small, cv2.COLOR_BGR2GRAY)
+    flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+    mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+    
+    # Update the previous frame for optical flow
+    prev_gray = gray
 
-        # Downscale frame for faster processing
-        small_frame = cv2.resize(current_frame, downscale_size)
+    # Use the YOLOv8 model to detect people
+    results = model(frame_small)
 
-        # Step 1: Background subtractor and masking moving objects
-        fg_mask = backSub.apply(small_frame)
-        _, thresh = cv2.threshold(fg_mask, 150, 255, cv2.THRESH_BINARY)
-        processed_mask = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    # Create a mask for human movements
+    person_mask = np.zeros(processed_mask.shape, dtype=np.uint8)
 
-        # Step 2: Optical Flow for accurate movement within human regions
-        gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
-        flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-        mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-        
-        # Update the previous frame for optical flow
-        prev_gray = gray
+    # Count the number of detected people
+    user_count = 0  # Initialize user_count here
 
-        # Use the YOLO11 model to detect humans
-        results = model(small_frame, verbose=False)
+    # Iterate over all detected objects
+    for result in results:
+        for box in result.boxes:
+            if box.cls == 0 and box.conf > 0.3:  # Lower confidence threshold to 30%
+                x1, y1, x2, y2 = map(int, box.xyxy[0])  # Get the bounding box coordinates
 
-        # Create a mask for human movements
-        person_mask = np.zeros(processed_mask.shape, dtype=np.uint8)
+                # Create a mask within the detected area of a person
+                person_mask[y1:y2, x1:x2] = processed_mask[y1:y2, x1:x2]
 
-        # Minimum size for bounding boxes to filter out small objects like hands
-        min_box_area = 5000  # Adjust this value as needed
+                # Update the cumulative mask
+                cumulative_mask[y1:y2, x1:x2] = 255
 
-        # Count the number of people detected
-        people_count = 0
+                # Increment the user count
+                user_count += 1
 
-        # Iterate through all detected objects
-        for result in results:
-            for box in result.boxes:
-                if box.cls == 0 and box.conf > 0.3:  # Lower the confidence threshold to 30%
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])  # Get the bounding box coordinates
-                    box_area = (x2 - x1) * (y2 - y1)
+    # Log the count and timestamp
+    counts_and_timestamps.append((time.time(), user_count))
 
-                    if box_area < min_box_area:
-                        continue  # Skip small boxes
+    # Send the user count to the database
+    send_human_count_to_db(user_count)
 
-                    people_count += 1
+    # Blur the regions within the cumulative mask
+    frame_small[cumulative_mask > 0] = cv2.GaussianBlur(frame_small[cumulative_mask > 0], (51, 51), 30)
 
-                    # Create a mask within the detected area of a person
-                    person_mask[y1:y2, x1:x2] = processed_mask[y1:y2, x1:x2]
+    # Draw rectangles around detected people
+    for result in results:
+        for box in result.boxes:
+            if box.cls == 0 and box.conf > 0.3:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                cv2.rectangle(frame_small, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Red with a thickness of 2
 
-                    # Update the cumulative mask
-                    cumulative_mask[y1:y2, x1:x2] = 255
+    # Create a temporary heatmap for the current frame and masked motion areas
+    heatmap_current = person_mask.astype(np.float32) + cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX).astype(np.float32)
+    heatmap_normalized = cv2.normalize(heatmap_current, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-        # Debugging: Check if cumulative_mask is empty
-        if np.count_nonzero(cumulative_mask) == 0:
-            print("Warning: cumulative_mask is empty")
+    # Apply a color map (such as in the example: blue-green-red)
+    heatmap_colored = cv2.applyColorMap(heatmap_normalized, cv2.COLORMAP_JET)
 
-        # Blur the regions within the cumulative mask
-        try:
-            small_frame[cumulative_mask > 0] = cv2.GaussianBlur(small_frame[cumulative_mask > 0], (15, 15), 10)
-        except cv2.error as e:
-            print(f"Error applying GaussianBlur: {e}")
-            continue
+    # Combine the heatmap with the original frame
+    overlay_frame = cv2.addWeighted(frame_small, 0.6, heatmap_colored, 0.4, 0)
 
-        # Draw rectangles around the detected persons
-        for result in results:
-            for box in result.boxes:
-                if box.cls == 0 and box.conf > 0.3:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    box_area = (x2 - x1) * (y2 - y1)
+    # Resize overlay_frame back to the original frame size
+    overlay_frame = cv2.resize(overlay_frame, (frame.shape[1], frame.shape[0]))
 
-                    if box_area < min_box_area:
-                        continue  # Skip small boxes
+    return overlay_frame, prev_gray, cumulative_mask
 
-                    cv2.rectangle(small_frame, (x1, y1), (x2, y2), (0, 255, 0), 3)  # Bright green with a thickness of 3
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-        # Create a temporary heatmap for only the current frame and masked motion areas
-        heatmap_current = person_mask.astype(np.float32) + cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX).astype(np.float32)
-        heatmap_normalized = cv2.normalize(heatmap_current, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    frame_count += 1
 
-        # Apply a color map (like in the example: blue-green-red)
-        heatmap_colored = cv2.applyColorMap(heatmap_normalized, cv2.COLORMAP_JET)
+    if frame_count % frame_interval == 0:
+        # Process the frame
+        overlay_frame, prev_gray, cumulative_mask = process_frame(frame, prev_gray, cumulative_mask)
 
-        # Combine the heatmap with the original frame
-        overlay_frame = cv2.addWeighted(small_frame, 0.6, heatmap_colored, 0.4, 0)
+        # Show the result without details of moving objects outside the people
+        cv2.imshow("Heatmap with red rectangles around people", overlay_frame)
 
-        # Upscale the processed frame back to the original size
-        overlay_frame = cv2.resize(overlay_frame, original_size)
+    # Use the calculated wait time for real-time playback
+    if cv2.waitKey(wait_time) & 0xFF == ord('q'):
+        break
 
-        # Send a message if the number of people exceeds the threshold and has changed
-        if people_count != previous_people_count:
-            print(f"Number of people detected: {people_count}")
-            if people_count > people_threshold:
-                send_message_to_website(people_count)
-            previous_people_count = people_count
+cap.release()
+cv2.destroyAllWindows()
 
-def generate_frames():
-    global overlay_frame
-    while True:
-        if overlay_frame is not None:
-            ret, buffer = cv2.imencode('.jpg', overlay_frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+# Generate the graph after the session ends
+timestamps, counts = zip(*counts_and_timestamps)
+timestamps = [time.strftime('%H:%M:%S', time.localtime(ts)) for ts in timestamps]
 
-def run_opencv():
-    # Start the frame capture and processing threads
-    capture_thread = threading.Thread(target=capture_frames)
-    process_thread = threading.Thread(target=process_frames)
-    capture_thread.start()
-    process_thread.start()
-
-    capture_thread.join()
-    process_thread.join()
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-if __name__ == '__main__':
-    run_opencv()
+plt.figure(figsize=(10, 5))
+plt.plot(timestamps, counts, marker='o')
+plt.xlabel('Time')
+plt.ylabel('Number of People')
+plt.title('Number of People Detected Over Time')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig('people_count_over_time.png')
+plt.show()
