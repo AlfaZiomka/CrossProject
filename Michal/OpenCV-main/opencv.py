@@ -9,7 +9,7 @@ import requests
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Initialize the camera
-video_path = "rtsp://Groepje6:bingchillin420@192.168.0.101:554/stream1"  # Use 0 for the default camera and for RTSP streams: "rtsp://Groepje6:bingchillin420@192.168.0.101:554/stream1"
+video_path = "rtsp://Groepje6:bingchillin420@192.168.0.101:554/stream1"  # Use 0 for the default camera
 cap = cv2.VideoCapture(video_path)
 if not cap.isOpened():
     print(f"Error opening camera with URL: {video_path}")
