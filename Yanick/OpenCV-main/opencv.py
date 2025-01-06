@@ -7,7 +7,7 @@ import torch
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Initialiseer de video
-video_path = 'bartest.mp4'
+video_path = 'rtsp://Groepje6:bingchillin420@192.168.0.101:554/stream1'
 cap = cv2.VideoCapture(video_path)
 if not cap.isOpened():
     print("Fout bij het openen van de video")
@@ -18,7 +18,7 @@ fps = cap.get(cv2.CAP_PROP_FPS)
 wait_time = int(1000 / fps)  # Bereken de juiste wachttijd voor real-time afspelen
 
 # Laad het YOLOv8 model voor menselijke detectie
-model = YOLO('yolov8n.pt').to(device)  # Gebruik yolov8n (nano) voor snelheid; kies yolov8s of groter voor meer nauwkeurigheid
+model = YOLO('yolov8s.pt').to(device)  # Gebruik yolov8n (nano) voor snelheid; kies yolov8s of groter voor meer nauwkeurigheid
 
 # Achtergrondsubtractor en optical flow-instellingen
 backSub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, varThreshold=16)  # Verlaag varThreshold voor hogere gevoeligheid
@@ -32,7 +32,7 @@ kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 cumulative_mask = np.zeros_like(frame[:, :, 0], dtype=np.uint8)
 
 # Frame interval for processing
-frame_interval = 2
+frame_interval = 10
 frame_count = 0
 
 # Function to process frames
