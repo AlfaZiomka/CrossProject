@@ -9,10 +9,10 @@ import requests
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Initialize the camera
-video_path = 0  # Use 0 for the default camera #use: "rtsp://joebidensbalzak69:hijisdement420@192.168.0.101:554/stream1" voor de ip camera.
+video_path = "rtsp://joebidensbalzak69:hijisdement420@192.168.0.101:554/stream1"  # Use 0 for the default camera
 cap = cv2.VideoCapture(video_path)
 if not cap.isOpened():
-    print("Error opening camera")
+    print(f"Error opening camera with URL: {video_path}")
     exit()
 
 # Get the framerate of the camera
@@ -25,6 +25,10 @@ model = YOLO('yolo11n.pt').to(device)  # Use yolo11n (nano) for faster performan
 # Background subtractor and optical flow settings
 backSub = cv2.createBackgroundSubtractorKNN(detectShadows=False)  # Use KNN for faster background subtraction
 ret, frame = cap.read()
+if not ret:
+    print("Error reading frame from camera")
+    exit()
+
 original_size = frame.shape[1], frame.shape[0]  # Store the original frame size
 downscale_size = (640, 360)  # Define the downscale size
 prev_gray = cv2.cvtColor(cv2.resize(frame, downscale_size), cv2.COLOR_BGR2GRAY)
@@ -119,8 +123,16 @@ def process_frames():
                     # Update the cumulative mask
                     cumulative_mask[y1:y2, x1:x2] = 255
 
+        # Debugging: Check if cumulative_mask is empty
+        if np.count_nonzero(cumulative_mask) == 0:
+            print("Warning: cumulative_mask is empty")
+
         # Blur the regions within the cumulative mask
-        small_frame[cumulative_mask > 0] = cv2.GaussianBlur(small_frame[cumulative_mask > 0], (15, 15), 10)
+        try:
+            small_frame[cumulative_mask > 0] = cv2.GaussianBlur(small_frame[cumulative_mask > 0], (15, 15), 10)
+        except cv2.error as e:
+            print(f"Error applying GaussianBlur: {e}")
+            continue
 
         # Draw rectangles around the detected persons
         for result in results:
