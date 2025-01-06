@@ -150,7 +150,7 @@
             border-radius: 10px;
             overflow: hidden;
         }
-        .video-container video {
+        .video-container img {
             width: 100%;
             height: 100%;
             cursor: pointer; /* Voeg een cursor toe om aan te geven dat de video klikbaar is */
@@ -208,7 +208,7 @@
     </div>
     <div class="media-container">
         <div class="video-container">
-            <video id="heatmap-video" src="/static/heatmap.mp4" autoplay loop muted playsinline></video>
+            <img id="heatmap-video" src="{{ url_for('video_feed') }}" alt="Live Video Feed">
         </div>
         <div class="image-container">
             <img src="/static/heatmap.png" alt="Plattegrond van het gebouw">
