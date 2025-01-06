@@ -137,37 +137,40 @@ def process_frame(frame, prev_gray, cumulative_mask):
 
     return overlay_frame, prev_gray, cumulative_mask
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+def run_opencv():
+    global cap, frame_count, frame_interval, prev_gray, cumulative_mask
 
-    frame_count += 1
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-    if frame_count % frame_interval == 0:
-        # Process the frame
-        overlay_frame, prev_gray, cumulative_mask = process_frame(frame, prev_gray, cumulative_mask)
+        frame_count += 1
 
-        # Show the result without details of moving objects outside the people
-        cv2.imshow("Heatmap with red rectangles around people", overlay_frame)
+        if frame_count % frame_interval == 0:
+            # Process the frame
+            overlay_frame, prev_gray, cumulative_mask = process_frame(frame, prev_gray, cumulative_mask)
 
-    # Use the calculated wait time for real-time playback
-    if cv2.waitKey(wait_time) & 0xFF == ord('q'):
-        break
+            # Show the result without details of moving objects outside the people
+            cv2.imshow("Heatmap with red rectangles around people", overlay_frame)
 
-cap.release()
-cv2.destroyAllWindows()
+        # Use the calculated wait time for real-time playback
+        if cv2.waitKey(wait_time) & 0xFF == ord('q'):
+            break
 
-# Generate the graph after the session ends
-timestamps, counts = zip(*counts_and_timestamps)
-timestamps = [time.strftime('%H:%M:%S', time.localtime(ts)) for ts in timestamps]
+    cap.release()
+    cv2.destroyAllWindows()
 
-plt.figure(figsize=(10, 5))
-plt.plot(timestamps, counts, marker='o')
-plt.xlabel('Time')
-plt.ylabel('Number of People')
-plt.title('Number of People Detected Over Time')
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.savefig('people_count_over_time.png')
-plt.show()
+    # Generate the graph after the session ends
+    timestamps, counts = zip(*counts_and_timestamps)
+    timestamps = [time.strftime('%H:%M:%S', time.localtime(ts)) for ts in timestamps]
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(timestamps, counts, marker='o')
+    plt.xlabel('Time')
+    plt.ylabel('Number of People')
+    plt.title('Number of People Detected Over Time')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig('people_count_over_time.png')
+    plt.show()
