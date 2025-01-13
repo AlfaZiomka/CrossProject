@@ -5,6 +5,7 @@ import torch
 import requests
 import time
 import matplotlib.pyplot as plt
+import os
 
 # Function to send human count to the Flask endpoint
 def send_human_count_to_db(count):
@@ -172,5 +173,11 @@ def run_opencv():
     plt.title('Number of People Detected Over Time')
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig('people_count_over_time.png')
+
+    # Save the graph to the static folder
+    static_folder = os.path.join(os.path.dirname(__file__), 'static')
+    if not os.path.exists(static_folder):
+        os.makedirs(static_folder)
+    graph_path = os.path.join(static_folder, 'people_count_over_time.png')
+    plt.savefig(graph_path)
     plt.show()
