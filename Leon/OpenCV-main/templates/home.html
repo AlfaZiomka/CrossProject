@@ -52,6 +52,10 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 30%;
         }
+        .graph-container {
+            text-align: center;
+            margin-top: 2rem;
+        }
         footer {
             background-color: #333;
             color: #fff;
@@ -92,9 +96,23 @@
                 <p>Get in touch with us for more information.</p>
             </div>
         </div>
+        <div class="graph-container">
+            <h2>Graph</h2>
+            <img id="graph" src="{{ url_for('static', filename='people_count_over_time.png') }}" alt="Graph will be displayed here after the test">
+        </div>
     </div>
     <footer>
         <p>&copy; 2023 My Homepage. All rights reserved.</p>
     </footer>
+    <script>
+        // Function to update the graph source
+        function updateGraphSource() {
+            const graphElement = document.getElementById('graph');
+            graphElement.src = graphElement.getAttribute('data-src');  // Update this path to your graph image
+        }
+
+        // Call the function to update the graph source
+        updateGraphSource();
+    </script>
 </body>
 </html>
