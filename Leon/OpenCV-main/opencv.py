@@ -9,7 +9,7 @@ import os
 
 # Function to send human count to the Flask endpoint
 def send_human_count_to_db(count):
-    url = 'http://localhost:5000/update_count'  # Adjust the URL to match your Flask endpoint
+    url = "rtsp://Groepje6:bingchillin420@192.168.0.101:554/stream1"  # Adjust the URL to match your Flask endpoint
     data = {'count': count}
     try:
         response = requests.post(url, json=data)
@@ -24,7 +24,7 @@ def send_human_count_to_db(count):
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Initialize the video
-video_path = 'C:/Users/Leonr/Downloads/OpenCV-main/OpenCV-main/bartest.mp4'  # '0' for webcam, 'video.mp4' for a video file, or 'rtsp://...' for an RTSP stream
+video_path = "rtsp://Groepje6:bingchillin420@192.168.0.101:554/stream1"  # '0' for webcam, 'video.mp4' for a video file, or 'rtsp://...' for an RTSP stream
 
 cap = cv2.VideoCapture(video_path)
 if not cap.isOpened():
@@ -113,8 +113,14 @@ def process_frame(frame, prev_gray, cumulative_mask):
     # Send the user count to the database
     send_human_count_to_db(user_count)
 
-    # Blur the regions within the cumulative mask
-    frame_small[cumulative_mask > 0] = cv2.GaussianBlur(frame_small[cumulative_mask > 0], (51, 51), 30)
+    # Check if frame_small and cumulative_mask are not empty before applying Gaussian blur
+    if frame_small.size > 0 and cumulative_mask.size > 0:
+        if np.any(cumulative_mask > 0):
+            frame_small[cumulative_mask > 0] = cv2.GaussianBlur(frame_small[cumulative_mask > 0], (51, 51), 30)
+        else:
+            print("Warning: cumulative_mask has no positive values")
+    else:
+        print("Warning: frame_small or cumulative_mask is empty")
 
     # Draw rectangles around detected people
     for result in results:
