@@ -57,7 +57,7 @@ kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 cumulative_mask = np.zeros_like(frame_small[:, :, 0], dtype=np.uint8)
 
 # Frame interval for processing
-frame_interval = 10
+frame_interval = 20
 frame_count = 0
 
 # List to store counts and timestamps
