@@ -36,7 +36,7 @@ fps = cap.get(cv2.CAP_PROP_FPS)
 wait_time = int(1000 / fps)  # Calculate the appropriate wait time for real-time playback
 
 # Load the YOLOv8 model for human detection
-model = YOLO('OpenCV-main/yolov11n.pt').to(device)  # Use yolov8n (nano) for speed; choose yolov8s or larger for more accuracy
+model = YOLO('yolo11n.pt').to(device)  # Use yolov8n (nano) for speed; choose yolov8s or larger for more accuracy
 
 # Background subtractor and optical flow settings
 backSub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, varThreshold=16)  # Lower varThreshold for higher sensitivity
