@@ -104,6 +104,9 @@
                 .catch(error => console.error('Error fetching current count:', error));
         }
 
+        // Fetch current count every 5 seconds
+        setInterval(fetchCurrentCount, 1000);
+
         // Fetch current count immediately on page load
         fetchCurrentCount();
     </script>
