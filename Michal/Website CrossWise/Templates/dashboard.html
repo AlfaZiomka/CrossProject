@@ -23,7 +23,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between; /* Zorg ervoor dat de inhoud wordt verdeeld */
+            justify-content: space-between;
         }
         .sidebar h2 {
             text-align: center;
@@ -33,7 +33,7 @@
             list-style-type: none;
             padding: 0;
             width: 100%;
-            flex-grow: 1; /* Zorg ervoor dat de lijst groeit om de ruimte op te vullen */
+            flex-grow: 1;
         }
         .sidebar ul li {
             padding: 10px;
@@ -49,10 +49,10 @@
             background-color: #575757;
         }
         .logout {
-            margin-top: auto; /* Zorg ervoor dat de uitlogknop naar de onderkant van de zijbalk wordt geduwd */
+            margin-top: auto;
         }
         .logout a {
-            color: white; /* Geef de uitlogknop een witte kleur */
+            color: white;
             text-decoration: none;
             display: block;
             padding: 10px;
@@ -68,7 +68,7 @@
             background-color: rgba(255, 255, 255, 0.9);
             border-radius: 10px;
             margin: 20px;
-            margin-top: 400px; /* Vergroot de marge om de main-content verder naar beneden te verplaatsen */
+            margin-top: 400px;
             overflow-y: auto;
         }
         .navbar {
@@ -88,7 +88,7 @@
             border-radius: 4px;
             text-align: center;
             margin-bottom: 20px;
-            display: none; /* Verberg de alert standaard */
+            display: none;
         }
         .bar-status {
             display: flex;
@@ -144,8 +144,8 @@
             gap: 20px;
         }
         .video-container {
-            width: 480px; /* Verlaag de breedte van de video */
-            height: 320px; /* Verlaag de hoogte van de video */
+            width: 480px;
+            height: 320px;
             border: 2px solid #007BFF;
             border-radius: 10px;
             overflow: hidden;
@@ -153,12 +153,12 @@
         .video-container img {
             width: 100%;
             height: 100%;
-            cursor: pointer; /* Voeg een cursor toe om aan te geven dat de video klikbaar is */
-            pointer-events: none; /* Voorkom dat de video interactie-elementen toont */
+            cursor: pointer;
+            pointer-events: none;
         }
         .image-container {
-            width: 480px; /* Zelfde breedte als de video */
-            height: 320px; /* Zelfde hoogte als de video */
+            width: 480px;
+            height: 320px;
             border: 2px solid #007BFF;
             border-radius: 10px;
             overflow: hidden;
@@ -173,13 +173,14 @@
     <div class="sidebar">
         <h2>SPOT GRONINGEN</h2>
         <ul>
-            <li><a href="#">Home</a></li>
+            <li><a href="{{ url_for('home') }}">Home</a></li>
             <li><a href="#">Profiel</a></li>
             <li><a href="#">Instellingen</a></li>
-            <li><a href="/kiosk">Zelfbestellingskiosk</a></li> <!-- Link naar de kiosk -->
+            <li><a href="{{ url_for('kiosk') }}">Zelfbestellingskiosk</a></li>
+            <li><a href="{{ url_for('db') }}">Open DB Application</a></li>
         </ul>
         <div class="logout">
-            <a href="#">Uitloggen</a>
+            <a href="{{ url_for('logout') }}">Uitloggen</a>
         </div>
     </div>
     <div class="main-content">
@@ -193,16 +194,23 @@
             <div class="bar-status">
                 <div class="bar" id="bar-1">
                     <h3>Bar 1</h3>
-                    <p id="bar-1-status">Normaal</p>
+                    <p id="bar-1-status">Beetje druk</p>
                 </div>
                 <div class="bar" id="bar-2">
                     <h3>Bar 2</h3>
-                    <p id="bar-2-status">Normaal</p>
+                    <p id="bar-2-status">Druk</p>
                 </div>
                 <div class="bar" id="bar-3">
                     <h3>Bar 3</h3>
-                    <p id="bar-3-status">Normaal</p>
+                    <p id="bar-3-status">Heel druk</p>
                 </div>
+            </div>
+            <div class="counts">
+                <h2>Current Counts</h2>
+                <p>Current Count: <span id="current_count">0</span></p>
+                <p>Minimum Count: <span id="min_count">0</span></p>
+                <p>Maximum Count: <span id="max_count">0</span></p>
+                <p>Average Count: <span id="avg_count">0</span></p>
             </div>
         </div>
     </div>
@@ -218,59 +226,57 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
         const socket = io();
-        const cooldownPeriod = 30000; // Cooldown periode van 30 seconden
-        const lastDrukTime = { 'bar-1': 0, 'bar-2': 0, 'bar-3': 0 };
 
-        function updateBarStatus(barId, status) {
-            const bar = document.getElementById(barId);
-            const statusSpan = document.getElementById(`${barId}-status`);
+        // Debugging: Log wanneer de verbinding is gemaakt
+        socket.on('connect', function() {
+            console.log('Verbonden met de server');
+        });
 
-            statusSpan.textContent = status;
+        // Debugging: Log eventuele fouten
+        socket.on('error', function(error) {
+            console.error('Socket.IO-fout:', error);
+        });
 
-            if (status === 'Druk') {
-                bar.className = 'bar red';
-                document.getElementById('alert').style.display = 'block';
-                socket.emit('send_alert', { message: `Te veel klanten bij ${barId.replace('-', ' ')}` });
-            } else if (status === 'Het wordt druk') {
-                bar.className = 'bar orange';
-            } else {
-                bar.className = 'bar green';
+        // Ontvang meldingen van de server
+        socket.on('receive_alert', function(data) {
+            console.log('Received alert:', data);  // Debugging log
+            const barNumber = data.message.split(' ')[1];
+            const statusDiv = document.getElementById(`bar-${barNumber}-status`);
+            const count = parseInt(data.message.match(/\d+/)[0]);
+
+            if (count > 6) {
+                statusDiv.className = 'status status-heel-druk';
+                statusDiv.innerText = 'Heel druk';
+            } else if (count > 3) {
+                statusDiv.className = 'status status-druk';
+                statusDiv.innerText = 'Druk';
+            } else if (count > 2) {
+                statusDiv.className = 'status status-druk';
+                statusDiv.innerText = 'Een beetje druk';
+            } else if  (count > 0) {
+                statusDiv.className = 'status status-normaal';
+                statusDiv.innerText = 'Normaal';
             }
+        });
+
+        function fetchCounts() {
+            fetch('{{ url_for("get_counts_route") }}')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('current_count').textContent = data.current_count;
+                    document.getElementById('min_count').textContent = data.min_count;
+                    document.getElementById('max_count').textContent = data.max_count;
+                    document.getElementById('avg_count').textContent = data.avg_count;
+                })
+                .catch(error => console.error('Error fetching counts:', error));
         }
 
-        function simulateBarStatus() {
-            const currentTime = Date.now();
+        // Fetch counts every 5 seconds
+        setInterval(fetchCounts, 5000);
 
-            ['bar-1', 'bar-2', 'bar-3'].forEach(barId => {
-                let status;
-                if (currentTime - lastDrukTime[barId] < cooldownPeriod) {
-                    status = randomStatus(['Het wordt druk', 'Rustig'], [3, 7]);
-                } else {
-                    status = randomStatus(['Druk', 'Het wordt druk', 'Rustig'], [1, 3, 7]);
-                    if (status === 'Druk') {
-                        lastDrukTime[barId] = currentTime;
-                    }
-                }
-                updateBarStatus(barId, status);
-            });
-        }
+        // Fetch counts immediately on page load
+        fetchCounts();
 
-        function randomStatus(statuses, weights) {
-            const totalWeight = weights.reduce((acc, weight) => acc + weight, 0);
-            const randomNum = Math.random() * totalWeight;
-            let weightSum = 0;
-
-            for (let i = 0; i < statuses.length; i++) {
-                weightSum += weights[i];
-                if (randomNum <= weightSum) {
-                    return statuses[i];
-                }
-            }
-        }
-
-        setInterval(simulateBarStatus, 5000); // Simuleer elke 5 seconden
-
-        // Voeg een event listener toe om de video in volledig scherm te bekijken bij dubbelklikken
         const video = document.getElementById('heatmap-video');
         video.addEventListener('dblclick', () => {
             if (video.requestFullscreen) {

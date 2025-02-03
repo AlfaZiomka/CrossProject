@@ -35,12 +35,22 @@
             color: #666;
         }
         .melding-container .alert {
-            background-color: #ffcc00;
-            color: black;
             padding: 10px;
             border-radius: 4px;
             text-align: center;
             margin-bottom: 20px;
+        }
+        .alert-normaal {
+            background-color: #ffcc00;
+            color: black;
+        }
+        .alert-druk {
+            background-color: #ff9900;
+            color: black;
+        }
+        .alert-heel-druk {
+            background-color: #ff0000;
+            color: white;
         }
         .watermark {
             position: absolute;
@@ -57,14 +67,6 @@
             font-size: 20px;
             color: #333;
         }
-        .bar-alerts .alert {
-            background-color: #ffcc00;
-            color: black;
-            padding: 10px;
-            border-radius: 4px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
     </style>
 </head>
 <body>
@@ -72,19 +74,21 @@
         <h1>Meldingen</h1>
         <div class="bar-alerts" id="bar-1-alerts">
             <h2>Bar 1</h2>
+            <div class="alert alert-normaal" id="bar-1-status">Normaal</div>
         </div>
         <div class="bar-alerts" id="bar-2-alerts">
             <h2>Bar 2</h2>
+            <div class="alert alert-normaal" id="bar-2-status">Normaal</div>
         </div>
         <div class="bar-alerts" id="bar-3-alerts">
             <h2>Bar 3</h2>
+            <div class="alert alert-normaal" id="bar-3-status">Normaal</div>
         </div>
     </div>
     <img src="/static/alfa-college.png" alt="Watermerk" class="watermark">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
         const socket = io();
-        const maxAlerts = 5; // Maximaal aantal meldingen per bar
 
         // Debugging: Log wanneer de verbinding is gemaakt
         socket.on('connect', function() {
@@ -99,20 +103,46 @@
         // Ontvang meldingen van de server
         socket.on('receive_alert', function(data) {
             console.log('Received alert:', data);  // Debugging log
-            const barNumber = data.message.split(' ')[5];
-            const alertsDiv = document.getElementById(`bar-${barNumber}-alerts`);
-            const alert = document.createElement('div');
-            alert.className = 'alert';
-            alert.innerText = data.message;
+            const barNumber = data.message.split(' ')[1];
+            const statusDiv = document.getElementById(`bar-${barNumber}-status`);
+            const count = parseInt(data.message.match(/\d+/)[0]);
 
-            // Voeg de nieuwe melding toe
-            alertsDiv.appendChild(alert);
-
-            // Verwijder de oudste melding als het maximum is bereikt
-            if (alertsDiv.children.length > maxAlerts) {
-                alertsDiv.removeChild(alertsDiv.firstChild);
+            if (count > 8) {
+                statusDiv.className = 'alert alert-heel-druk';
+                statusDiv.innerText = 'Heel druk';
+            } else if (count > 6) {
+                statusDiv.className = 'alert alert-druk';
+                statusDiv.innerText = 'Druk';
+            } else if (count > 4) {
+                statusDiv.className = 'alert alert-druk';
+                statusDiv.innerText = 'Een beetje druk';
+            } else {
+                statusDiv.className = 'alert alert-normaal';
+                statusDiv.innerText = 'Normaal';
             }
         });
+
+        // Simuleer meldingen
+        function simulateAlerts() {
+            const bars = [1, 2, 3];
+            bars.forEach(bar => {
+                const count = Math.floor(Math.random() * 10) + 1;
+                let message = '';
+                if (count > 6) {
+                    message = `Bar ${bar} is heel druk (${count} mensen)`;
+                } else if (count > 5) {
+                    message = `Bar ${bar} is druk (${count} mensen)`;
+                } else if (count > 3) {
+                    message = `Bar ${bar} is een beetje druk (${count} mensen)`;
+                } else if (count > 0) {
+                    message = `Bar ${bar} is normaal (${count} mensen)`;
+                }
+                socket.emit('send_alert', { message });
+            });
+        }
+
+        // Simuleer meldingen elke 5 seconden
+        setInterval(simulateAlerts, 3000);
     </script>
 </body>
 </html>

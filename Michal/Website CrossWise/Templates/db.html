@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: #444;
+        }
+        nav a {
+            color: #fff;
+            padding: 1rem;
+            text-decoration: none;
+        }
+        nav a:hover {
+            background-color: #555;
+        }
+        .container {
+            padding: 2rem;
+        }
+        .hero {
+            background-color: #e2e2e2;
+            padding: 2rem;
+            text-align: center;
+        }
+        .hero h1 {
+            margin: 0;
+        }
+        .content {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 2rem;
+        }
+        .content div {
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 30%;
+        }
+        footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Database Page</h1>
+    </header>
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('count') }}">Count</a>
+        <a href="{{ url_for('get_counts_route') }}">Get Counts</a>
+        <a href="{{ url_for('db_chart') }}">Chart</a>
+    </nav>
+    <div class="container">
+        <div class="hero">
+            <h1>Welcome to the Database Page</h1>
+        </div>
+        <div class="content">
+            <div>
+                <h2>Current Count</h2>
+                <p id="current_count">Loading...</p>
+            </div>
+            <div>
+                <h2>Min Count</h2>
+                <p id="min_count">Loading...</p>
+            </div>
+            <div>
+                <h2>Max Count</h2>
+                <p id="max_count">Loading...</p>
+            </div>
+            <div>
+                <h2>Average Count</h2>
+                <p id="avg_count">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2023 Database Page</p>
+    </footer>
+    <script>
+        function fetchCounts() {
+            fetch('{{ url_for("get_counts_route") }}')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('current_count').textContent = data.current_count;
+                    document.getElementById('min_count').textContent = data.min_count;
+                    document.getElementById('max_count').textContent = data.max_count;
+                    document.getElementById('avg_count').textContent = data.avg_count;
+                })
+                .catch(error => console.error('Error fetching counts:', error));
+        }
+
+        // Fetch counts every 5 seconds
+        setInterval(fetchCounts, 5000);
+
+        // Fetch counts immediately on page load
+        fetchCounts();
+    </script>
+</body>
+</html>

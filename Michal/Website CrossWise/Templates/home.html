@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: #444;
+        }
+        nav a {
+            color: #fff;
+            padding: 1rem;
+            text-decoration: none;
+        }
+        nav a:hover {
+            background-color: #555;
+        }
+        .container {
+            padding: 2rem;
+            text-align: center;
+        }
+        .card {
+            background-color: #fff;
+            padding: 1rem;
+            margin: 1rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            width: 200px;
+            text-align: left;
+        }
+        .card h2 {
+            font-size: 1.2rem;
+            margin: 0 0 1rem 0;
+        }
+        .card p {
+            font-size: 1rem;
+            margin: 0 0 1rem 0;
+        }
+        .card a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .card a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Home Page</h1>
+    </header>
+    <nav>
+        <a href="{{ url_for('db') }}">Database</a>
+        <a href="{{ url_for('count') }}">Count</a>
+        <a href="{{ url_for('get_counts_route') }}">Get Counts</a>
+        <a href="{{ url_for('db_chart') }}">Chart</a>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <h2>Database</h2>
+            <p>Bekijk en beheer de database.</p>
+            <a href="{{ url_for('db') }}">Ga naar Database</a>
+        </div>
+        <div class="card">
+            <h2>Count</h2>
+            <p>Bekijk de huidige tellingen.</p>
+            <a href="{{ url_for('count') }}">Ga naar Count</a>
+        </div>
+        <div class="card">
+            <h2>Get Counts</h2>
+            <p>Haal de laatste tellingen op.</p>
+            <a href="{{ url_for('get_counts_route') }}">Ga naar Get Counts</a>
+        </div>
+        <div class="card">
+            <h2>Chart</h2>
+            <p>Bekijk de grafiek van de tellingen.</p>
+            <a href="{{ url_for('db_chart') }}">Ga naar Chart</a>
+        </div>
+    </div>
+</body>
+</html>
